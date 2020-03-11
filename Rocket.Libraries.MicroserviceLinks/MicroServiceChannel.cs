@@ -21,11 +21,10 @@ namespace Rocket.Libraries.MicroServiceChannels
             this.httpClientFactory = httpClientFactory;
         }
 
-        public async Task<TResponse> CallAsync<TResponse>(string microService, string relativePath, Dictionary<string, string> headers, HttpMethod method, object payload)
+        public async Task<TResponse> CallAsync<TResponse>(Uri absoluteUri, Dictionary<string, string> headers, HttpMethod method, object payload)
         {
             using (var httpClient = httpClientFactory.CreateClient())
             {
-                var absoluteUri = await GetAbsoluteUri(microService, relativePath);
                 using (var requestMessage = new HttpRequestMessage(method, absoluteUri))
                 {
                     InjectPayloadIfRequired(requestMessage, method, payload);
@@ -37,6 +36,15 @@ namespace Rocket.Libraries.MicroServiceChannels
                         return JsonConvert.DeserializeObject<TResponse>(responseText);
                     }
                 }
+            }
+        }
+
+        public async Task<TResponse> CallAsync<TResponse>(string microService, string relativePath, Dictionary<string, string> headers, HttpMethod method, object payload)
+        {
+            using (var httpClient = httpClientFactory.CreateClient())
+            {
+                var absoluteUri = await GetAbsoluteUri(microService, relativePath);
+                return await CallAsync<TResponse>(absoluteUri, headers, method, payload);
             }
         }
 
