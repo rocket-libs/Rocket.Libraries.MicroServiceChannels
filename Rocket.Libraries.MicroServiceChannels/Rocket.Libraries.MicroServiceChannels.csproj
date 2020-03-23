@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Rocket.Libraries.MicroServiceChannels</AssemblyName>
-    <Version>1.1.0</Version>
+    <Version>1.1.2</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rocket-libs/Rocket.Libraries.MicroServiceChannels</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rocket-libs/Rocket.Libraries.MicroServiceChannels</RepositoryUrl>
