@@ -9,9 +9,9 @@ namespace Rocket.Libraries.MicroServiceChannels
 {
     public class MicroServiceChannel : IMicroServiceChannel
     {
-        private readonly IMicroServicesRegistryReader microServiceRegistryReader;
-
         private readonly IHttpClientFactory httpClientFactory;
+
+        private readonly IMicroServicesRegistryReader microServiceRegistryReader;
 
         public MicroServiceChannel(
             IMicroServicesRegistryReader microServiceRegistryReader,
@@ -21,7 +21,7 @@ namespace Rocket.Libraries.MicroServiceChannels
             this.httpClientFactory = httpClientFactory;
         }
 
-        public async Task<TResponse> CallAsync<TResponse>(Uri absoluteUri, Dictionary<string, string> headers, HttpMethod method, object payload)
+        public async Task<TResponse> CallAsync<TResponse>(Uri absoluteUri, Dictionary<string, string> headers, HttpMethod method, object payload, Action<string> onResponseReceived = null)
         {
             using (var httpClient = httpClientFactory.CreateClient())
             {
@@ -33,27 +33,31 @@ namespace Rocket.Libraries.MicroServiceChannels
                     using (var response = await httpClient.SendAsync(requestMessage))
                     {
                         var responseText = await response.Content.ReadAsStringAsync();
+                        LogResponseText(onResponseReceived, responseText);
                         return JsonConvert.DeserializeObject<TResponse>(responseText);
                     }
                 }
             }
         }
 
-        public async Task<TResponse> CallAsync<TResponse>(string microService, string relativePath, Dictionary<string, string> headers, HttpMethod method, object payload)
+        public async Task<TResponse> CallAsync<TResponse>(string microService, string relativePath, Dictionary<string, string> headers, HttpMethod method, object payload, Action<string> onResponseReceived = null)
         {
             using (var httpClient = httpClientFactory.CreateClient())
             {
                 var absoluteUri = await GetAbsoluteUri(microService, relativePath);
-                return await CallAsync<TResponse>(absoluteUri, headers, method, payload);
+                return await CallAsync<TResponse>(absoluteUri, headers, method, payload, onResponseReceived);
             }
         }
 
-        private void InjectPayloadIfRequired(HttpRequestMessage requestMessage, HttpMethod method, object payload)
+        private async Task<Uri> GetAbsoluteUri(string microService, string relativePath)
         {
-            if (method == HttpMethod.Post || method == HttpMethod.Put)
+            var baseUrl = await microServiceRegistryReader.GetServiceBaseAddressAsync(microService);
+            var urlBaseNotFound = string.IsNullOrEmpty(baseUrl);
+            if (urlBaseNotFound)
             {
-                requestMessage.Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
+                throw new Exception($"Could not find base url for microservice '{microService}'");
             }
+            return new Uri($"{baseUrl}{relativePath}", UriKind.Absolute);
         }
 
         private void InjectHeadersIfRequired(HttpRequestMessage requestMessage, Dictionary<string, string> headers)
@@ -67,15 +71,28 @@ namespace Rocket.Libraries.MicroServiceChannels
             }
         }
 
-        private async Task<Uri> GetAbsoluteUri(string microService, string relativePath)
+        private void InjectPayloadIfRequired(HttpRequestMessage requestMessage, HttpMethod method, object payload)
         {
-            var baseUrl = await microServiceRegistryReader.GetServiceBaseAddressAsync(microService);
-            var urlBaseNotFound = string.IsNullOrEmpty(baseUrl);
-            if (urlBaseNotFound)
+            if (method == HttpMethod.Post || method == HttpMethod.Put)
             {
-                throw new Exception($"Could not find base url for microservice '{microService}'");
+                requestMessage.Content = new StringContent(JsonConvert.SerializeObject(payload), Encoding.UTF8, "application/json");
             }
-            return new Uri($"{baseUrl}{relativePath}", UriKind.Absolute);
+        }
+
+        private void LogResponseText(Action<string> onResponseReceived, string responseText)
+        {
+            try
+            {
+                if (onResponseReceived == null)
+                {
+                    return;
+                }
+                onResponseReceived(responseText);
+            }
+            catch
+            {
+                // Non critical. We can ignore errors from this callback.
+            }
         }
     }
 }
