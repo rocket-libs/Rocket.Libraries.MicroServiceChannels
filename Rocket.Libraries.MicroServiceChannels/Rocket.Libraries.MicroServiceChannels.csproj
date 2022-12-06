@@ -3,11 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Rocket.Libraries.MicroServiceChannels</AssemblyName>
-    <Version>1.1.2</Version>
+    <Version>1.1.3</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/rocket-libs/Rocket.Libraries.MicroServiceChannels</PackageProjectUrl>
     <RepositoryUrl>https://github.com/rocket-libs/Rocket.Libraries.MicroServiceChannels</RepositoryUrl>
     <Description>Framework to allow building of HTTP communication links between microservices</Description>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
