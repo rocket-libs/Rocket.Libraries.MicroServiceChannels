@@ -83,10 +83,13 @@ namespace Rocket.Libraries.MicroServiceChannels
         {
             try
             {
+                Console.WriteLine(responseText);
                 if (onResponseReceived == null)
                 {
+                    Console.WriteLine("No listener found for response text");
                     return;
                 }
+                Console.WriteLine("Sending response text to listner");
                 onResponseReceived(responseText);
             }
             catch
